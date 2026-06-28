@@ -15,6 +15,30 @@ const getAllPubs = (req, res) => {
   });
 };
 
+// Get a single pub using its ID
+const getPubById = (req, res) => {
+  const pubId = req.params.id;
+
+  const sql = "SELECT * FROM pubs WHERE pub_id = ?";
+
+  db.query(sql, [pubId], (err, results) => {
+    if (err) {
+      return res.status(500).json({
+        message: "Error retrieving pub"
+      });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({
+        message: "Pub not found"
+      });
+    }
+
+    res.json(results[0]);
+  });
+};
+
 module.exports = {
-  getAllPubs
+  getAllPubs,
+  getPubById
 };
