@@ -85,9 +85,35 @@ const getPubFacilities = (req, res) => {
   });
 };
 
+// Get reviews for a specific pub
+const getPubReviews = (req, res) => {
+  const pubId = req.params.id;
+
+  const sql = `
+    SELECT
+      rating,
+      comment,
+      review_date
+    FROM reviews
+    WHERE pub_id = ?
+    ORDER BY review_date DESC
+  `;
+
+  db.query(sql, [pubId], (err, results) => {
+    if (err) {
+      return res.status(500).json({
+        message: "Error retrieving reviews"
+      });
+    }
+
+    res.json(results);
+  });
+};
+
 module.exports = {
   getAllPubs,
   getPubById,
   getPubDrinks,
-  getPubFacilities
+  getPubFacilities,
+  getPubReviews
 };

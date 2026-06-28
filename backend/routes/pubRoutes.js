@@ -5,7 +5,8 @@ const {
   getAllPubs,
   getPubById,
   getPubDrinks,
-  getPubFacilities
+  getPubFacilities,
+  getPubReviews
 } = require("../controllers/pubController");
 
 // Route to get all pubs
@@ -16,6 +17,9 @@ router.get("/:id/drinks", getPubDrinks);
 
 // Route to get facilities for a specific pub
 router.get("/:id/facilities", getPubFacilities);
+
+// Route to get reviews for a specific pub
+router.get("/:id/reviews", getPubReviews);
 
 // Route to get a pub by ID
 router.get("/:id", getPubById);
