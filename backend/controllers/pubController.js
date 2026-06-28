@@ -38,7 +38,56 @@ const getPubById = (req, res) => {
   });
 };
 
+// Get all drinks available in a specific pub
+const getPubDrinks = (req, res) => {
+  const pubId = req.params.id;
+
+  const sql = `
+    SELECT
+      d.drink_name,
+      pdp.price
+    FROM pub_drink_prices pdp
+    JOIN drinks d ON pdp.drink_id = d.drink_id
+    WHERE pdp.pub_id = ?
+  `;
+
+  db.query(sql, [pubId], (err, results) => {
+    if (err) {
+      return res.status(500).json({
+        message: "Error retrieving drinks"
+      });
+    }
+
+    res.json(results);
+  });
+};
+
+// Get all facilities available in a specific pub
+const getPubFacilities = (req, res) => {
+  const pubId = req.params.id;
+
+  const sql = `
+    SELECT
+      f.facility_name
+    FROM pub_facilities pf
+    JOIN facilities f ON pf.facility_id = f.facility_id
+    WHERE pf.pub_id = ?
+  `;
+
+  db.query(sql, [pubId], (err, results) => {
+    if (err) {
+      return res.status(500).json({
+        message: "Error retrieving facilities"
+      });
+    }
+
+    res.json(results);
+  });
+};
+
 module.exports = {
   getAllPubs,
-  getPubById
+  getPubById,
+  getPubDrinks,
+  getPubFacilities
 };
