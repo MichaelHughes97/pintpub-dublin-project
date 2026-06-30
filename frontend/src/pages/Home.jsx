@@ -17,13 +17,13 @@ function Home() {
   return (
     <div>
       <h1>PintPoint Dublin 🍺</h1>
-
+        {/*Display all pubs*/}
       {pubs.map((pub) => (
         <div key={pub.pub_id}>
           <h2>{pub.name}</h2>
           <p>{pub.address}</p>
           <p>{pub.description}</p>
-
+        {/* Link to the pub details page*/}
           <Link to={`/pubs/${pub.pub_id}`}>View details</Link>
 
           <hr />
