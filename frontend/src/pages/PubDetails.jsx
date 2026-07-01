@@ -9,6 +9,9 @@ function PubDetails() {
   const [pub, setPub] = useState(null);
   const [drinks, setDrinks] = useState([]);
 
+  //Facilities variable 
+  const [facilities, setFacilities] = useState([]);
+
   useEffect(() => {
     // Fetch selected pub details
     fetch(`http://localhost:3000/api/pubs/${id}`)
@@ -21,13 +24,19 @@ function PubDetails() {
       .then((response) => response.json())
       .then((data) => setDrinks(data))
       .catch((error) => console.error(error));
+
+     // Fetch facilities available in this pub
+    fetch(`http://localhost:3000/api/pubs/${id}/facilities`)
+     .then((response) => response.json())
+     .then((data) => setFacilities(data))
+     .catch((error) => console.error(error)); 
   }, [id]);
 
   if (!pub) {
     return <p>Loading...</p>;
   }
 
-  return (
+    return (
     <div>
       <h1>{pub.name}</h1>
 
@@ -36,13 +45,23 @@ function PubDetails() {
 
       <h2>Drinks</h2>
 
-      <ul>
+      <div>
         {drinks.map((drink, index) => (
-          <li key={index}>
+          <p key={index}>
             {drink.drink_name} - €{drink.price}
-          </li>
+          </p>
         ))}
-      </ul>
+      </div>
+
+      <h2>Facilities</h2>
+
+      <div>
+        {facilities.map((facility, index) => (
+          <p key={index}>
+            ✓ {facility.facility_name}
+          </p>
+        ))}
+      </div>
 
       <Link to="/">← Back to all pubs</Link>
     </div>
