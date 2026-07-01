@@ -12,6 +12,9 @@ function PubDetails() {
   //Facilities variable 
   const [facilities, setFacilities] = useState([]);
 
+  //Reviews variable 
+  const [reviews, setReviews] = useState([]);
+
   useEffect(() => {
     // Fetch selected pub details
     fetch(`http://localhost:3000/api/pubs/${id}`)
@@ -30,6 +33,12 @@ function PubDetails() {
      .then((response) => response.json())
      .then((data) => setFacilities(data))
      .catch((error) => console.error(error)); 
+
+     // Fetch reviews for this pub
+fetch(`http://localhost:3000/api/pubs/${id}/reviews`)
+  .then((response) => response.json())
+  .then((data) => setReviews(data))
+  .catch((error) => console.error(error));
   }, [id]);
 
   if (!pub) {
@@ -62,6 +71,16 @@ function PubDetails() {
           </p>
         ))}
       </div>
+
+      <h2>Reviews</h2>
+
+    <div>
+     {reviews.map((review, index) => (
+    <p key={index}>
+      {"★".repeat(review.rating)} {review.comment}
+    </p>
+  ))}
+    </div>
 
       <Link to="/">← Back to all pubs</Link>
     </div>
