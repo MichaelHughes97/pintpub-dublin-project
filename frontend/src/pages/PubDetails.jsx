@@ -49,8 +49,20 @@ fetch(`http://localhost:3000/api/pubs/${id}/reviews`)
     <div>
       <h1>{pub.name}</h1>
 
-      <p>{pub.address}</p>
-      <p>{pub.description}</p>
+     <p>{pub.address}</p>
+
+{/* Open the pub location in Google Maps */}
+<a
+  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+    pub.address
+  )}`}
+  target="_blank"
+  rel="noopener noreferrer"
+>
+  📍 Open in Google Maps
+</a>
+
+<p>{pub.description}</p>
 
       <h2>Drinks</h2>
 
