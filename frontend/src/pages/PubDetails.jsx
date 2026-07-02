@@ -46,16 +46,15 @@ fetch(`http://localhost:3000/api/pubs/${id}/reviews`)
   }
 
     return (
-    <div>
+      <div className="details-card">
       <h1>{pub.name}</h1>
 
      <p>{pub.address}</p>
 
 {/* Open the pub location in Google Maps */}
 <a
-  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-    pub.address
-  )}`}
+  className="maps-link"
+  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(pub.address)}`}
   target="_blank"
   rel="noopener noreferrer"
 >
@@ -92,9 +91,11 @@ fetch(`http://localhost:3000/api/pubs/${id}/reviews`)
       {"★".repeat(review.rating)} {review.comment}
     </p>
   ))}
+   
     </div>
-
-      <Link to="/">← Back to all pubs</Link>
+<    Link className="back-link" to="/">
+        ← Back to all pubs
+    </Link>
     </div>
   );
 }

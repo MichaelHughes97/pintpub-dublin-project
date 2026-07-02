@@ -23,7 +23,7 @@ const filteredPubs = pubs.filter((pub) =>
 );
   return (
     <div>
-      <h1>PintPoint Dublin 🍺</h1>
+      <h1>PintPoint Dublin </h1>
 
       <input
   type="text"
@@ -33,14 +33,16 @@ const filteredPubs = pubs.filter((pub) =>
     />
         {/*Display all pubs*/}
       {filteredPubs.map((pub) => (
-        <div key={pub.pub_id}>
-          <h2>{pub.name}</h2>
+        <div key={pub.pub_id} className="pub-card">
+          <h2 className="pub-name">{pub.name}</h2>
           <p>{pub.address}</p>
           <p>{pub.description}</p>
         {/* Link to the pub details page*/}
-          <Link to={`/pubs/${pub.pub_id}`}>View details</Link>
+          <Link className="details-button" to={`/pubs/${pub.pub_id}`}>
+        View Details
+          </Link>
 
-          <hr />
+          
         </div>
       ))}
     </div>
