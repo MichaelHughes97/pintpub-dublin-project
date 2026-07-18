@@ -1,6 +1,6 @@
 const bcrypt = require("bcrypt");
 const db = require("../config/db");
-
+const jwt = require("jsonwebtoken");
 const registerUser = async (req, res) => {
   try {
     const {
@@ -104,6 +104,93 @@ const registerUser = async (req, res) => {
   }
 };
 
+const loginUser = (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({
+      message: "Email and password are required.",
+    });
+  }
+
+  const normalisedEmail = email.trim().toLowerCase();
+
+  const sql = `
+    SELECT
+      user_id,
+      first_name,
+      last_name,
+      email,
+      password_hash,
+      role
+    FROM users
+    WHERE email = ?
+  `;
+
+  db.query(sql, [normalisedEmail], async (error, users) => {
+    if (error) {
+      console.error("Login database error:", error);
+
+      return res.status(500).json({
+        message: "Database error while logging in.",
+      });
+    }
+
+    if (users.length === 0) {
+      return res.status(401).json({
+        message: "Invalid email or password.",
+      });
+    }
+
+    const user = users[0];
+
+    try {
+      const passwordMatches = await bcrypt.compare(
+        password,
+        user.password_hash
+      );
+
+      if (!passwordMatches) {
+        return res.status(401).json({
+          message: "Invalid email or password.",
+        });
+      }
+
+      const token = jwt.sign(
+        {
+          user_id: user.user_id,
+          email: user.email,
+          role: user.role,
+        },
+        process.env.JWT_SECRET,
+        {
+          expiresIn: "2h",
+        }
+      );
+
+      return res.json({
+        message: "Login successful.",
+        token,
+        user: {
+          user_id: user.user_id,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          email: user.email,
+          role: user.role,
+        },
+      });
+    } catch (compareError) {
+      console.error("Password comparison error:", compareError);
+
+      return res.status(500).json({
+        message: "Unable to verify the password.",
+      });
+    }
+  });
+};
+
 module.exports = {
   registerUser,
+  loginUser,
 };
+
