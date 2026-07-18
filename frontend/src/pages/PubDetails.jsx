@@ -1,102 +1,226 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 
+import templeBar from "../assets/pubs/temple-bar.jpg";
+import brazenHead from "../assets/pubs/brazen-head.jpg";
+import longHall from "../assets/pubs/long-hall.jpg";
+import odonoghues from "../assets/pubs/odonoghues.jpg";
+import stagsHead from "../assets/pubs/stags-head.jpg";
+
 function PubDetails() {
-  // Get the pub ID from the URL
   const { id } = useParams();
 
-  // Store pub details and drinks from the API
   const [pub, setPub] = useState(null);
   const [drinks, setDrinks] = useState([]);
-
-  //Facilities variable 
   const [facilities, setFacilities] = useState([]);
-
-  //Reviews variable 
   const [reviews, setReviews] = useState([]);
 
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const pubImages = {
+    1: templeBar,
+    2: brazenHead,
+    3: longHall,
+    4: odonoghues,
+    5: stagsHead,
+  };
+
   useEffect(() => {
-    // Fetch selected pub details
-    fetch(`http://localhost:3000/api/pubs/${id}`)
-      .then((response) => response.json())
-      .then((data) => setPub(data))
-      .catch((error) => console.error(error));
+    async function loadPubDetails() {
+      try {
+        setLoading(true);
+        setError("");
 
-    // Fetch drinks available in this pub
-    fetch(`http://localhost:3000/api/pubs/${id}/drinks`)
-      .then((response) => response.json())
-      .then((data) => setDrinks(data))
-      .catch((error) => console.error(error));
+        const [
+          pubResponse,
+          drinksResponse,
+          facilitiesResponse,
+          reviewsResponse,
+        ] = await Promise.all([
+          fetch(`http://localhost:3000/api/pubs/${id}`),
+          fetch(`http://localhost:3000/api/pubs/${id}/drinks`),
+          fetch(`http://localhost:3000/api/pubs/${id}/facilities`),
+          fetch(`http://localhost:3000/api/pubs/${id}/reviews`),
+        ]);
 
-     // Fetch facilities available in this pub
-    fetch(`http://localhost:3000/api/pubs/${id}/facilities`)
-     .then((response) => response.json())
-     .then((data) => setFacilities(data))
-     .catch((error) => console.error(error)); 
+        if (
+          !pubResponse.ok ||
+          !drinksResponse.ok ||
+          !facilitiesResponse.ok ||
+          !reviewsResponse.ok
+        ) {
+          throw new Error("Unable to retrieve the pub details.");
+        }
 
-     // Fetch reviews for this pub
-fetch(`http://localhost:3000/api/pubs/${id}/reviews`)
-  .then((response) => response.json())
-  .then((data) => setReviews(data))
-  .catch((error) => console.error(error));
+        const pubData = await pubResponse.json();
+        const drinksData = await drinksResponse.json();
+        const facilitiesData = await facilitiesResponse.json();
+        const reviewsData = await reviewsResponse.json();
+
+        setPub(pubData);
+        setDrinks(drinksData);
+        setFacilities(facilitiesData);
+        setReviews(reviewsData);
+      } catch (requestError) {
+        console.error(requestError);
+        setError("The pub details could not be loaded.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadPubDetails();
   }, [id]);
 
-  if (!pub) {
-    return <p>Loading...</p>;
+  const averageRating =
+    reviews.length > 0
+      ? reviews.reduce(
+          (total, review) => total + Number(review.rating),
+          0
+        ) / reviews.length
+      : null;
+
+  if (loading) {
+    return <p className="details-message">Loading pub details...</p>;
   }
 
+  if (error) {
     return (
-      <div className="details-card">
-      <h1>{pub.name}</h1>
+      <div className="details-message">
+        <p>{error}</p>
 
-     <p>{pub.address}</p>
-
-{/* Open the pub location in Google Maps */}
-<a
-  className="maps-link"
-  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(pub.address)}`}
-  target="_blank"
-  rel="noopener noreferrer"
->
-  📍 Open in Google Maps
-</a>
-
-<p>{pub.description}</p>
-
-      <h2>Drinks</h2>
-
-      <div>
-        {drinks.map((drink, index) => (
-          <p key={index}>
-            {drink.drink_name} - €{drink.price}
-          </p>
-        ))}
+        <Link className="back-link" to="/">
+          Back to all pubs
+        </Link>
       </div>
+    );
+  }
 
-      <h2>Facilities</h2>
+  if (!pub) {
+    return <p className="details-message">Pub not found.</p>;
+  }
 
-      <div>
-        {facilities.map((facility, index) => (
-          <p key={index}>
-            ✓ {facility.facility_name}
-          </p>
-        ))}
-      </div>
+  return (
+    <main className="pub-details-page">
+      <article className="details-card">
+        <div className="details-image-container">
+          {pubImages[Number(id)] ? (
+            <img
+              src={pubImages[Number(id)]}
+              alt={`Exterior of ${pub.name}`}
+              className="details-image"
+            />
+          ) : (
+            <div className="details-image-placeholder">
+              Photo coming soon
+            </div>
+          )}
+        </div>
 
-      <h2>Reviews</h2>
+        <div className="details-content">
+          <header className="details-header">
+            <h1>{pub.name}</h1>
 
-    <div>
-     {reviews.map((review, index) => (
-    <p key={index}>
-      {"★".repeat(review.rating)} {review.comment}
-    </p>
-  ))}
-   
-    </div>
-<    Link className="back-link" to="/">
-        ← Back to all pubs
-    </Link>
-    </div>
+            <p className="details-address">{pub.address}</p>
+
+            <p className="details-rating">
+              {averageRating !== null
+                ? `Rating: ${averageRating.toFixed(1)} / 5`
+                : "No ratings yet"}
+            </p>
+
+            <a
+              className="maps-link"
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                pub.address
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Open in Google Maps
+            </a>
+          </header>
+
+          <section className="details-section">
+            <h2>About</h2>
+            <p>{pub.description}</p>
+          </section>
+
+          <section className="details-section">
+            <h2>Opening Hours</h2>
+            <p>{pub.opening_hours || "Opening hours unavailable."}</p>
+          </section>
+
+          <section className="details-section">
+            <h2>Drinks</h2>
+
+            {drinks.length > 0 ? (
+              <div className="details-list">
+                {drinks.map((drink, index) => (
+                  <div className="drink-row" key={drink.drink_id || index}>
+                    <span>{drink.drink_name}</span>
+                    <span>€{Number(drink.price).toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p>No drink information is available.</p>
+            )}
+          </section>
+
+          <section className="details-section">
+            <h2>Facilities</h2>
+
+            {facilities.length > 0 ? (
+              <ul className="facility-list">
+                {facilities.map((facility, index) => (
+                  <li key={facility.facility_id || index}>
+                    {facility.facility_name}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p>No facility information is available.</p>
+            )}
+          </section>
+
+          <section className="details-section">
+            <h2>Reviews</h2>
+
+            {reviews.length > 0 ? (
+              <div className="reviews-list">
+                {reviews.map((review, index) => (
+                  <article
+                    className="review-card"
+                    key={review.review_id || index}
+                  >
+                    <p className="review-stars">
+                      {"★".repeat(Number(review.rating))}
+                      {"☆".repeat(5 - Number(review.rating))}
+                    </p>
+
+                    <p>{review.comment}</p>
+
+                    {review.review_date && (
+                      <p className="review-date">
+                        {new Date(review.review_date).toLocaleDateString()}
+                      </p>
+                    )}
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <p>No reviews have been added yet.</p>
+            )}
+          </section>
+
+          <Link className="back-link" to="/">
+            Back to all pubs
+          </Link>
+        </div>
+      </article>
+    </main>
   );
 }
 

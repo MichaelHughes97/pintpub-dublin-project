@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const db = require("./config/db");
 const pubRoutes = require("./routes/pubRoutes");
+const authRoutes = require("./routes/authRoutes");
 
 const app = express();
 const PORT = 3000;
@@ -12,9 +13,7 @@ app.use(express.json());
 
 // API routes
 app.use("/api/pubs", pubRoutes);
-
-// Parse JSON request bodies
-app.use(express.json());
+app.use("/api/auth", authRoutes);
 
 // Test route to make sure the API is running
 app.get("/", (req, res) => {
