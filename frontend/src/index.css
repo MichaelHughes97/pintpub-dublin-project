@@ -261,11 +261,42 @@ input {
   transform: scale(1.15);
 }
 
-.pub-card {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+.pub-rating {
+  color: #8a5a35 !important;
+  font-size: 15px;
+  font-weight: 700;
 }
 
-.pub-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+
+/* Homepage filter controls */
+.filter-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.filter-buttons button {
+  padding: 10px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 999px;
+  background-color: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.filter-buttons button:hover {
+  background-color: rgba(255, 255, 255, 0.22);
+  transform: translateY(-1px);
+}
+
+.filter-buttons .active-filter {
+  border-color: #ffffff;
+  background-color: #ffffff;
+  color: #3b2418;
 }
