@@ -6,6 +6,7 @@ import brazenHead from "../assets/pubs/brazen-head.jpg";
 import longHall from "../assets/pubs/long-hall.jpg";
 import odonoghues from "../assets/pubs/odonoghues.jpg";
 import stagsHead from "../assets/pubs/stags-head.jpg";
+import dublinBridge from "../assets/pubs/Dublin-Bridge.jpg";
 
 function Home() {
   const [pubs, setPubs] = useState([]);
@@ -105,7 +106,18 @@ function Home() {
 
   return (
     <div className="home-page">
-      <section className="hero-section">
+      <section
+        className="hero-section"
+        style={{
+          backgroundImage: `
+            linear-gradient(
+              rgba(18, 10, 7, 0.82),
+              rgba(18, 10, 7, 0.82)
+            ),
+            url(${dublinBridge})
+          `,
+        }}
+      >
         <h1>PintPoint Dublin</h1>
 
         <p className="hero-text">

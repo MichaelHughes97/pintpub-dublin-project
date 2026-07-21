@@ -89,20 +89,28 @@ const getPubFacilities = (req, res) => {
 const getPubReviews = (req, res) => {
   const pubId = req.params.id;
 
+  // Join the users table so the reviewer's name can be displayed
   const sql = `
     SELECT
-      rating,
-      comment,
-      review_date
-    FROM reviews
-    WHERE pub_id = ?
-    ORDER BY review_date DESC
+      r.review_id,
+      r.rating,
+      r.user_id,
+      r.comment,
+      r.review_date,
+      u.first_name,
+      u.last_name
+    FROM reviews r
+    JOIN users u ON r.user_id = u.user_id
+    WHERE r.pub_id = ?
+    ORDER BY r.review_date DESC
   `;
 
   db.query(sql, [pubId], (err, results) => {
     if (err) {
+      console.error("Review retrieval error:", err);
+
       return res.status(500).json({
-        message: "Error retrieving reviews"
+        message: "Error retrieving reviews",
       });
     }
 

@@ -18,12 +18,56 @@ function PubDetails() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // Review form values
+  const [rating, setRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [comment, setComment] = useState("");
+  const [reviewMessage, setReviewMessage] = useState("");
+  const [reviewError, setReviewError] = useState("");
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [editingReviewId, setEditingReviewId] = useState(null);
+
+  const token = localStorage.getItem("token");
+
+  // Read the user saved when they logged in
+  let loggedInUser = null;
+
+  try {
+    const savedUser = localStorage.getItem("user");
+    loggedInUser = savedUser ? JSON.parse(savedUser) : null;
+  } catch {
+    loggedInUser = null;
+  }
+
+  const isLoggedIn = Boolean(token && loggedInUser);
+
   const pubImages = {
     1: templeBar,
     2: brazenHead,
     3: longHall,
     4: odonoghues,
     5: stagsHead,
+  };
+
+  // Find whether the logged-in user has already reviewed this pub
+  const userReview = loggedInUser
+    ? reviews.find(
+        (review) => Number(review.user_id) === Number(loggedInUser.user_id),
+      )
+    : null;
+
+  // Load reviews again after a review is added or updated
+  const loadReviews = async () => {
+    const response = await fetch(
+      `http://localhost:3000/api/pubs/${id}/reviews`,
+    );
+
+    if (!response.ok) {
+      throw new Error("Unable to retrieve reviews.");
+    }
+
+    const reviewsData = await response.json();
+    setReviews(reviewsData);
   };
 
   useEffect(() => {
@@ -73,13 +117,118 @@ function PubDetails() {
     loadPubDetails();
   }, [id]);
 
+  // Calculate the average rating for this pub
   const averageRating =
     reviews.length > 0
-      ? reviews.reduce(
-          (total, review) => total + Number(review.rating),
-          0
-        ) / reviews.length
+      ? reviews.reduce((total, review) => total + Number(review.rating), 0) /
+        reviews.length
       : null;
+
+  // Open the form with the current review values
+  const handleEditReview = (review) => {
+    setEditingReviewId(review.review_id);
+    setRating(Number(review.rating));
+    setComment(review.comment);
+    setReviewMessage("");
+    setReviewError("");
+
+    // Wait for the form to appear before scrolling to it
+    setTimeout(() => {
+      document.getElementById("review-form-section")?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }, 50);
+  };
+
+  // Close the edit form without saving changes
+  const handleCancelEdit = () => {
+    setEditingReviewId(null);
+    setRating(0);
+    setComment("");
+    setReviewMessage("");
+    setReviewError("");
+  };
+
+  // Create a new review or update an existing one
+  const handleReviewSubmit = async (event) => {
+    event.preventDefault();
+
+    setReviewMessage("");
+    setReviewError("");
+
+    if (rating === 0) {
+      setReviewError("Please choose a rating.");
+      return;
+    }
+
+    if (!comment.trim()) {
+      setReviewError("Please enter a comment.");
+      return;
+    }
+
+    try {
+      setSubmittingReview(true);
+
+      const isEditing = Boolean(editingReviewId);
+
+      const url = isEditing
+        ? `http://localhost:3000/api/reviews/${editingReviewId}`
+        : "http://localhost:3000/api/reviews";
+
+      const response = await fetch(url, {
+        method: isEditing ? "PUT" : "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          pub_id: Number(id),
+          rating,
+          comment: comment.trim(),
+        }),
+      });
+
+      const responseText = await response.text();
+
+      let data;
+
+      try {
+        data = JSON.parse(responseText);
+      } catch {
+        throw new Error(
+          `The backend returned an invalid response (${response.status}).`,
+        );
+      }
+
+      if (!response.ok) {
+        throw new Error(
+          data.message ||
+            (isEditing
+              ? "Unable to update the review."
+              : "Unable to submit the review."),
+        );
+      }
+
+      setReviewMessage(
+        isEditing
+          ? "Your review was updated successfully."
+          : "Your review was submitted successfully.",
+      );
+
+      setEditingReviewId(null);
+      setRating(0);
+      setComment("");
+
+      // Refresh reviews without reloading the page
+      await loadReviews();
+    } catch (submitError) {
+      console.error(submitError);
+      setReviewError(submitError.message);
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
 
   if (loading) {
     return <p className="details-message">Loading pub details...</p>;
@@ -112,9 +261,7 @@ function PubDetails() {
               className="details-image"
             />
           ) : (
-            <div className="details-image-placeholder">
-              Photo coming soon
-            </div>
+            <div className="details-image-placeholder">Photo coming soon</div>
           )}
         </div>
 
@@ -125,15 +272,22 @@ function PubDetails() {
             <p className="details-address">{pub.address}</p>
 
             <p className="details-rating">
-              {averageRating !== null
-                ? `Rating: ${averageRating.toFixed(1)} / 5`
-                : "No ratings yet"}
+              {averageRating !== null ? (
+                <>
+                  {"★".repeat(Math.round(averageRating))}
+                  {"☆".repeat(5 - Math.round(averageRating))}{" "}
+                  <strong>{averageRating.toFixed(1)}</strong> ({reviews.length}{" "}
+                  {reviews.length === 1 ? "review" : "reviews"})
+                </>
+              ) : (
+                "No ratings yet"
+              )}
             </p>
 
             <a
               className="maps-link"
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                pub.address
+                pub.address,
               )}`}
               target="_blank"
               rel="noopener noreferrer"
@@ -185,30 +339,158 @@ function PubDetails() {
             )}
           </section>
 
+          {/* Show the form when adding or editing a review */}
+          {(!userReview || editingReviewId) && (
+            <section
+              id="review-form-section"
+              className="details-section review-form-section"
+            >
+              <h2>{editingReviewId ? "Edit Your Review" : "Write a Review"}</h2>
+
+              {isLoggedIn ? (
+                <form className="review-form" onSubmit={handleReviewSubmit}>
+                  <div className="rating-input">
+                    <p>Your rating</p>
+
+                    <div
+                      className="star-buttons"
+                      onMouseLeave={() => setHoverRating(0)}
+                    >
+                      {[1, 2, 3, 4, 5].map((star) => {
+                        const activeRating = hoverRating || rating;
+
+                        return (
+                          <button
+                            key={star}
+                            type="button"
+                            className={
+                              star <= activeRating
+                                ? "star-button selected"
+                                : "star-button"
+                            }
+                            onMouseEnter={() => setHoverRating(star)}
+                            onClick={() => setRating(star)}
+                            aria-label={`${star} star rating`}
+                          >
+                            ★
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <label htmlFor="review-comment">Your comment</label>
+
+                  <textarea
+                    id="review-comment"
+                    value={comment}
+                    onChange={(event) => setComment(event.target.value)}
+                    placeholder="Share your experience at this pub..."
+                    rows="5"
+                    maxLength="500"
+                  />
+
+                  <p className="character-count">{comment.length}/500</p>
+
+                  {reviewError && <p className="form-error">{reviewError}</p>}
+
+                  <div className="review-form-buttons">
+                    <button
+                      className="submit-review-button"
+                      type="submit"
+                      disabled={submittingReview}
+                    >
+                      {submittingReview
+                        ? editingReviewId
+                          ? "Updating..."
+                          : "Submitting..."
+                        : editingReviewId
+                          ? "Update Review"
+                          : "Submit Review"}
+                    </button>
+
+                    {editingReviewId && (
+                      <button
+                        className="cancel-edit-button"
+                        type="button"
+                        onClick={handleCancelEdit}
+                        disabled={submittingReview}
+                      >
+                        Cancel
+                      </button>
+                    )}
+                  </div>
+                </form>
+              ) : (
+                <p>
+                  Please <Link to="/login">log in</Link> to write a review.
+                </p>
+              )}
+            </section>
+          )}
+
+          {/* Keep success messages visible after the form closes */}
+          {reviewMessage && <p className="form-success">{reviewMessage}</p>}
+
           <section className="details-section">
             <h2>Reviews</h2>
 
             {reviews.length > 0 ? (
               <div className="reviews-list">
-                {reviews.map((review, index) => (
-                  <article
-                    className="review-card"
-                    key={review.review_id || index}
-                  >
-                    <p className="review-stars">
-                      {"★".repeat(Number(review.rating))}
-                      {"☆".repeat(5 - Number(review.rating))}
-                    </p>
+                {reviews.map((review, index) => {
+                  const isOwnReview =
+                    loggedInUser &&
+                    Number(review.user_id) === Number(loggedInUser.user_id);
 
-                    <p>{review.comment}</p>
-
-                    {review.review_date && (
-                      <p className="review-date">
-                        {new Date(review.review_date).toLocaleDateString()}
+                  return (
+                    <article
+                      className="review-card"
+                      key={review.review_id || index}
+                    >
+                      <p className="review-author">
+                        {review.first_name} {review.last_name}
+                        {isOwnReview && (
+                          <span className="own-review-label">
+                            {" "}
+                            (Your review)
+                          </span>
+                        )}
                       </p>
-                    )}
-                  </article>
-                ))}
+
+                      <p className="review-stars">
+                        {"★".repeat(Number(review.rating))}
+                        {"☆".repeat(5 - Number(review.rating))}{" "}
+                        <strong>{Number(review.rating).toFixed(1)}</strong>
+                      </p>
+
+                      <p>{review.comment}</p>
+
+                      {review.review_date && (
+                        <p className="review-date">
+                          Reviewed on{" "}
+                          {new Date(review.review_date).toLocaleDateString(
+                            "en-GB",
+                            {
+                              day: "numeric",
+                              month: "long",
+                              year: "numeric",
+                            },
+                          )}
+                        </p>
+                      )}
+
+                      {isOwnReview && (
+                        <button
+                          type="button"
+                          className="edit-review-button"
+                          onClick={() => handleEditReview(review)}
+                        >
+                          Edit Review
+                        </button>
+                      )}
+                    </article>
+                  );
+                })}
               </div>
             ) : (
               <p>No reviews have been added yet.</p>
