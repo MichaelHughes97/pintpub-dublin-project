@@ -8,6 +8,7 @@ require("./config/db");
 const pubRoutes = require("./routes/pubRoutes");
 const authRoutes = require("./routes/authRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
+const favouriteRoutes = require("./routes/favouriteRoutes");
 
 const app = express();
 const PORT = 3000;
@@ -22,6 +23,7 @@ app.use(express.json());
 app.use("/api/pubs", pubRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/reviews", reviewRoutes);
+app.use("/api/favourites", favouriteRoutes);
 
 // Test route to check that the backend is running
 app.get("/", (req, res) => {

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { FaHeart, FaRegHeart } from "react-icons/fa";
 
 import templeBar from "../assets/pubs/temple-bar.jpg";
 import brazenHead from "../assets/pubs/brazen-head.jpg";
@@ -9,10 +10,17 @@ import stagsHead from "../assets/pubs/stags-head.jpg";
 import dublinBridge from "../assets/pubs/Dublin-Bridge.jpg";
 
 function Home() {
+  const navigate = useNavigate();
+
   const [pubs, setPubs] = useState([]);
   const [ratings, setRatings] = useState({});
+  const [favouritePubIds, setFavouritePubIds] = useState([]);
+  const [updatingFavouriteId, setUpdatingFavouriteId] = useState(null);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
+
+  const token = localStorage.getItem("token");
 
   const pubImages = {
     1: templeBar,
@@ -75,6 +83,98 @@ function Home() {
       });
   }, []);
 
+  // Load the logged-in user's favourite pubs
+  useEffect(() => {
+    if (!token) {
+      setFavouritePubIds([]);
+      return;
+    }
+
+    const loadFavourites = async () => {
+      try {
+        const response = await fetch(
+          "http://localhost:3000/api/favourites",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Unable to retrieve favourites");
+        }
+
+        const favourites = await response.json();
+
+        setFavouritePubIds(
+          favourites.map((favourite) => Number(favourite.pub_id))
+        );
+      } catch (error) {
+        console.error("Unable to load favourites:", error);
+      }
+    };
+
+    loadFavourites();
+  }, [token]);
+
+  const handleFavouriteClick = async (pubId) => {
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
+    const numericPubId = Number(pubId);
+    const isFavourite = favouritePubIds.includes(numericPubId);
+
+    try {
+      setUpdatingFavouriteId(numericPubId);
+
+      const response = await fetch(
+        isFavourite
+          ? `http://localhost:3000/api/favourites/${numericPubId}`
+          : "http://localhost:3000/api/favourites",
+        {
+          method: isFavourite ? "DELETE" : "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: isFavourite
+            ? undefined
+            : JSON.stringify({
+                pub_id: numericPubId,
+              }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message || "Unable to update this favourite."
+        );
+      }
+
+      if (isFavourite) {
+        setFavouritePubIds((currentFavourites) =>
+          currentFavourites.filter(
+            (favouriteId) => favouriteId !== numericPubId
+          )
+        );
+      } else {
+        setFavouritePubIds((currentFavourites) => [
+          ...currentFavourites,
+          numericPubId,
+        ]);
+      }
+    } catch (error) {
+      console.error("Unable to update favourite:", error);
+    } finally {
+      setUpdatingFavouriteId(null);
+    }
+  };
+
   const filteredPubs = pubs.filter((pub) => {
     const matchesSearch = pub.name
       .toLowerCase()
@@ -121,8 +221,8 @@ function Home() {
         <h1>PintPoint Dublin</h1>
 
         <p className="hero-text">
-          Discover Dublin&apos;s best pubs, compare facilities, read reviews
-          and plan your perfect night out.
+          Discover Dublin&apos;s best pubs, compare facilities, read
+          reviews and plan your perfect night out.
         </p>
 
         <input
@@ -143,7 +243,9 @@ function Home() {
 
           <button
             type="button"
-            className={activeFilter === "top-rated" ? "active-filter" : ""}
+            className={
+              activeFilter === "top-rated" ? "active-filter" : ""
+            }
             onClick={() => setActiveFilter("top-rated")}
           >
             Top Rated
@@ -151,7 +253,9 @@ function Home() {
 
           <button
             type="button"
-            className={activeFilter === "food" ? "active-filter" : ""}
+            className={
+              activeFilter === "food" ? "active-filter" : ""
+            }
             onClick={() => setActiveFilter("food")}
           >
             Food Available
@@ -159,7 +263,9 @@ function Home() {
 
           <button
             type="button"
-            className={activeFilter === "outdoor" ? "active-filter" : ""}
+            className={
+              activeFilter === "outdoor" ? "active-filter" : ""
+            }
             onClick={() => setActiveFilter("outdoor")}
           >
             Outdoor Seating
@@ -167,7 +273,9 @@ function Home() {
 
           <button
             type="button"
-            className={activeFilter === "live-music" ? "active-filter" : ""}
+            className={
+              activeFilter === "live-music" ? "active-filter" : ""
+            }
             onClick={() => setActiveFilter("live-music")}
           >
             Live Music
@@ -176,37 +284,73 @@ function Home() {
       </section>
 
       <section className="pub-grid">
-        {filteredPubs.map((pub) => (
-          <article key={pub.pub_id} className="pub-card">
-            <div className="pub-image-placeholder">
-              {pubImages[pub.pub_id] ? (
-                <img
-                  src={pubImages[pub.pub_id]}
-                  alt={`Exterior of ${pub.name}`}
-                  className="pub-image"
-                />
-              ) : (
-                "Photo coming soon"
-              )}
-            </div>
+        {filteredPubs.map((pub) => {
+          const isFavourite = favouritePubIds.includes(
+            Number(pub.pub_id)
+          );
 
-            <h2 className="pub-name">{pub.name}</h2>
+          return (
+            <article key={pub.pub_id} className="pub-card">
+              <div className="pub-image-placeholder">
+                {pubImages[pub.pub_id] ? (
+                  <img
+                    src={pubImages[pub.pub_id]}
+                    alt={`Exterior of ${pub.name}`}
+                    className="pub-image"
+                  />
+                ) : (
+                  "Photo coming soon"
+                )}
 
-            <p className="pub-rating">
-              {ratings[pub.pub_id] !== null &&
-              ratings[pub.pub_id] !== undefined
-                ? `Rating: ${ratings[pub.pub_id].toFixed(1)} / 5`
-                : "No ratings yet"}
-            </p>
+                <button
+                  type="button"
+                  className={
+                    isFavourite
+                      ? "favourite-button favourited"
+                      : "favourite-button"
+                  }
+                  onClick={() =>
+                    handleFavouriteClick(pub.pub_id)
+                  }
+                  disabled={
+                    updatingFavouriteId === Number(pub.pub_id)
+                  }
+                  aria-label={
+                    isFavourite
+                      ? `Remove ${pub.name} from favourites`
+                      : `Add ${pub.name} to favourites`
+                  }
+                  title={
+                    isFavourite
+                      ? "Remove from favourites"
+                      : "Add to favourites"
+                  }
+                >
+                  {isFavourite ? <FaHeart /> : <FaRegHeart />}
+                </button>
+              </div>
 
-            <p>{pub.address}</p>
-            <p>{pub.description}</p>
+              <h2 className="pub-name">{pub.name}</h2>
 
-            <Link className="details-button" to={`/pubs/${pub.pub_id}`}>
-              View Details
-            </Link>
-          </article>
-        ))}
+              <p className="pub-rating">
+                {ratings[pub.pub_id] !== null &&
+                ratings[pub.pub_id] !== undefined
+                  ? `Rating: ${ratings[pub.pub_id].toFixed(1)} / 5`
+                  : "No ratings yet"}
+              </p>
+
+              <p>{pub.address}</p>
+              <p>{pub.description}</p>
+
+              <Link
+                className="details-button"
+                to={`/pubs/${pub.pub_id}`}
+              >
+                View Details
+              </Link>
+            </article>
+          );
+        })}
       </section>
 
       {filteredPubs.length === 0 && (

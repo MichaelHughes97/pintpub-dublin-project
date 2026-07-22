@@ -117,19 +117,6 @@ input {
   box-shadow: 0 16px 38px rgba(49, 35, 27, 0.15);
 }
 
-.pub-image-placeholder {
-  min-height: 210px;
-  display: grid;
-  place-items: center;
-  background:
-    linear-gradient(rgba(58, 40, 30, 0.2), rgba(58, 40, 30, 0.2)),
-    linear-gradient(135deg, #d9c2ae, #9d7458);
-  color: #ffffff;
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: 0.7px;
-  text-transform: uppercase;
-}
 
 .pub-card h2,
 .pub-card p,
@@ -251,6 +238,23 @@ input {
   }
 }
 
+.pub-image-placeholder {
+  position: relative;
+  height: 220px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  border-radius: 15px 15px 0 0;
+  background:
+    linear-gradient(rgba(58, 40, 30, 0.2), rgba(58, 40, 30, 0.2)),
+    linear-gradient(135deg, #d9c2ae, #9d7458);
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+}
+
 .pub-image {
   width: 100%;
   height: 220px;
@@ -260,14 +264,47 @@ input {
   transition: transform 0.4s ease;
 }
 
-.pub-image-placeholder {
-  height: 220px;
-  overflow: hidden;
-  border-radius: 15px 15px 0 0;
-}
-
 .pub-card:hover .pub-image {
   transform: scale(1.15);
+}
+
+.favourite-button {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 2;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+background: rgba(255, 255, 255, 0.9);
+backdrop-filter: blur(6px);  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+  color: #3b2418;
+  font-size: 21px;
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.favourite-button:hover:not(:disabled) {
+  transform: scale(1.1);
+  background-color: #ffffff;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+
+.favourite-button.favourited {
+  color: #b3261e;
+}
+
+.favourite-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
 }
 
 .pub-rating {
@@ -275,7 +312,6 @@ input {
   font-size: 15px;
   font-weight: 700;
 }
-
 
 /* Homepage filter controls */
 .filter-buttons {
@@ -791,4 +827,3 @@ input {
   color: #8a5a35;
   font-weight: 600;
 }
-
