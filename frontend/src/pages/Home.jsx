@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { FaHeart, FaRegHeart } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 
 import templeBar from "../assets/pubs/temple-bar.jpg";
 import brazenHead from "../assets/pubs/brazen-head.jpg";
@@ -8,6 +7,7 @@ import longHall from "../assets/pubs/long-hall.jpg";
 import odonoghues from "../assets/pubs/odonoghues.jpg";
 import stagsHead from "../assets/pubs/stags-head.jpg";
 import dublinBridge from "../assets/pubs/Dublin-Bridge.jpg";
+import PubCard from "../components/PubCard";
 
 function Home() {
   const navigate = useNavigate();
@@ -290,65 +290,17 @@ function Home() {
           );
 
           return (
-            <article key={pub.pub_id} className="pub-card">
-              <div className="pub-image-placeholder">
-                {pubImages[pub.pub_id] ? (
-                  <img
-                    src={pubImages[pub.pub_id]}
-                    alt={`Exterior of ${pub.name}`}
-                    className="pub-image"
-                  />
-                ) : (
-                  "Photo coming soon"
-                )}
-
-                <button
-                  type="button"
-                  className={
-                    isFavourite
-                      ? "favourite-button favourited"
-                      : "favourite-button"
-                  }
-                  onClick={() =>
-                    handleFavouriteClick(pub.pub_id)
-                  }
-                  disabled={
-                    updatingFavouriteId === Number(pub.pub_id)
-                  }
-                  aria-label={
-                    isFavourite
-                      ? `Remove ${pub.name} from favourites`
-                      : `Add ${pub.name} to favourites`
-                  }
-                  title={
-                    isFavourite
-                      ? "Remove from favourites"
-                      : "Add to favourites"
-                  }
-                >
-                  {isFavourite ? <FaHeart /> : <FaRegHeart />}
-                </button>
-              </div>
-
-              <h2 className="pub-name">{pub.name}</h2>
-
-              <p className="pub-rating">
-                {ratings[pub.pub_id] !== null &&
-                ratings[pub.pub_id] !== undefined
-                  ? `Rating: ${ratings[pub.pub_id].toFixed(1)} / 5`
-                  : "No ratings yet"}
-              </p>
-
-              <p>{pub.address}</p>
-              <p>{pub.description}</p>
-
-              <Link
-                className="details-button"
-                to={`/pubs/${pub.pub_id}`}
-              >
-                View Details
-              </Link>
-            </article>
+            <PubCard
+              key={pub.pub_id}
+              pub={pub}
+              image={pubImages[pub.pub_id]}
+              rating={ratings[pub.pub_id]}
+              isFavourite={isFavourite}
+              isUpdating={
+                updatingFavouriteId === Number(pub.pub_id)
+              }
+              onFavouriteClick={handleFavouriteClick}
+            />
           );
         })}
       </section>

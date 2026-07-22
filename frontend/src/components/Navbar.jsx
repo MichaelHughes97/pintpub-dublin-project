@@ -1,4 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
+import "./Navbar.css";
 
 function Navbar() {
   const navigate = useNavigate();
@@ -14,33 +15,40 @@ function Navbar() {
   };
 
   return (
-    <nav style={styles.nav}>
-      <Link to="/" style={styles.logo}>
-         PintPoint Dublin
+    <nav className="navbar">
+      <Link to="/" className="navbar-logo">
+        PintPoint Dublin
       </Link>
 
-      <div style={styles.links}>
-        <Link to="/" style={styles.link}>
+      <div className="navbar-links">
+        <Link to="/" className="navbar-link">
           Home
         </Link>
 
         {user ? (
           <>
-            <span style={styles.welcome}>
+            <Link to="/favourites" className="navbar-link">
+              Favourites
+            </Link>
+
+            <span className="navbar-welcome">
               Welcome, {user.first_name}
             </span>
 
-            <button onClick={handleLogout} style={styles.button}>
+            <button
+              onClick={handleLogout}
+              className="logout-button"
+            >
               Logout
             </button>
           </>
         ) : (
           <>
-            <Link to="/login" style={styles.link}>
+            <Link to="/login" className="navbar-link">
               Login
             </Link>
 
-            <Link to="/register" style={styles.link}>
+            <Link to="/register" className="navbar-link">
               Register
             </Link>
           </>
@@ -49,47 +57,5 @@ function Navbar() {
     </nav>
   );
 }
-
-const styles = {
-  nav: {
-    backgroundColor: "#222",
-    color: "white",
-    padding: "15px 40px",
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-
-  logo: {
-    color: "white",
-    textDecoration: "none",
-    fontWeight: "bold",
-    fontSize: "22px",
-  },
-
-  links: {
-    display: "flex",
-    gap: "20px",
-    alignItems: "center",
-  },
-
-  link: {
-    color: "white",
-    textDecoration: "none",
-  },
-
-  welcome: {
-    fontWeight: "bold",
-  },
-
-  button: {
-    background: "#d62828",
-    color: "white",
-    border: "none",
-    padding: "8px 16px",
-    borderRadius: "5px",
-    cursor: "pointer",
-  },
-};
 
 export default Navbar;

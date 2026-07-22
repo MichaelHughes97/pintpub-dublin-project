@@ -4,6 +4,7 @@ import PubDetails from "./pages/PubDetails";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
 import Navbar from "./components/Navbar";
+import Favourites from "./pages/Favourites";
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
         <Route path="/pubs/:id" element={<PubDetails />} />
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/favourites" element={<Favourites />} />
       </Routes>
     </BrowserRouter>
   );
