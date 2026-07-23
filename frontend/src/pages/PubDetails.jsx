@@ -15,6 +15,14 @@ function PubDetails() {
   const [facilities, setFacilities] = useState([]);
   const [reviews, setReviews] = useState([]);
 
+  // Current atmosphere information
+const [atmosphere, setAtmosphere] = useState(null);
+// Atmosphere report form values
+const [selectedAtmosphere, setSelectedAtmosphere] = useState("");
+const [submittingAtmosphere, setSubmittingAtmosphere] = useState(false);
+const [atmosphereMessage, setAtmosphereMessage] = useState("");
+const [atmosphereError, setAtmosphereError] = useState("");
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -70,6 +78,20 @@ function PubDetails() {
     setReviews(reviewsData);
   };
 
+  // Load the latest atmosphere information
+const loadAtmosphere = async () => {
+  const response = await fetch(
+    `http://localhost:3000/api/atmosphere/${id}`,
+  );
+
+  if (!response.ok) {
+    throw new Error("Unable to retrieve atmosphere information.");
+  }
+
+  const atmosphereData = await response.json();
+  setAtmosphere(atmosphereData);
+};
+
   useEffect(() => {
     async function loadPubDetails() {
       try {
@@ -77,23 +99,26 @@ function PubDetails() {
         setError("");
 
         const [
-          pubResponse,
-          drinksResponse,
-          facilitiesResponse,
-          reviewsResponse,
-        ] = await Promise.all([
-          fetch(`http://localhost:3000/api/pubs/${id}`),
-          fetch(`http://localhost:3000/api/pubs/${id}/drinks`),
-          fetch(`http://localhost:3000/api/pubs/${id}/facilities`),
-          fetch(`http://localhost:3000/api/pubs/${id}/reviews`),
-        ]);
+  pubResponse,
+  drinksResponse,
+  facilitiesResponse,
+  reviewsResponse,
+  atmosphereResponse,
+] = await Promise.all([
+  fetch(`http://localhost:3000/api/pubs/${id}`),
+  fetch(`http://localhost:3000/api/pubs/${id}/drinks`),
+  fetch(`http://localhost:3000/api/pubs/${id}/facilities`),
+  fetch(`http://localhost:3000/api/pubs/${id}/reviews`),
+  fetch(`http://localhost:3000/api/atmosphere/${id}`),
+]);
 
-        if (
-          !pubResponse.ok ||
-          !drinksResponse.ok ||
-          !facilitiesResponse.ok ||
-          !reviewsResponse.ok
-        ) {
+       if (
+  !pubResponse.ok ||
+  !drinksResponse.ok ||
+  !facilitiesResponse.ok ||
+  !reviewsResponse.ok ||
+  !atmosphereResponse.ok
+) {
           throw new Error("Unable to retrieve the pub details.");
         }
 
@@ -101,11 +126,13 @@ function PubDetails() {
         const drinksData = await drinksResponse.json();
         const facilitiesData = await facilitiesResponse.json();
         const reviewsData = await reviewsResponse.json();
+        const atmosphereData = await atmosphereResponse.json();
 
         setPub(pubData);
         setDrinks(drinksData);
         setFacilities(facilitiesData);
         setReviews(reviewsData);
+        setAtmosphere(atmosphereData);
       } catch (requestError) {
         console.error(requestError);
         setError("The pub details could not be loaded.");
@@ -230,6 +257,57 @@ function PubDetails() {
     }
   };
 
+  // Submit or update the user's atmosphere report
+const handleAtmosphereSubmit = async (event) => {
+  event.preventDefault();
+
+  setAtmosphereMessage("");
+  setAtmosphereError("");
+
+  if (!selectedAtmosphere) {
+    setAtmosphereError("Please select the current atmosphere.");
+    return;
+  }
+
+  try {
+    setSubmittingAtmosphere(true);
+
+    const response = await fetch(
+      "http://localhost:3000/api/atmosphere",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          pub_id: Number(id),
+          atmosphere_level: selectedAtmosphere,
+        }),
+      },
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.message || "Unable to submit atmosphere report.",
+      );
+    }
+
+    setAtmosphereMessage(data.message);
+    setSelectedAtmosphere("");
+
+    // Refresh the atmosphere without reloading the page
+    await loadAtmosphere();
+  } catch (error) {
+    console.error(error);
+    setAtmosphereError(error.message);
+  } finally {
+    setSubmittingAtmosphere(false);
+  }
+};
+
   if (loading) {
     return <p className="details-message">Loading pub details...</p>;
   }
@@ -306,6 +384,86 @@ function PubDetails() {
             <p>{pub.opening_hours || "Opening hours unavailable."}</p>
           </section>
 
+          <section className="details-section">
+  <h2>Current Atmosphere</h2>
+
+  {atmosphere && atmosphere.atmosphere ? (
+    <>
+      <h3 className="current-atmosphere">
+  {atmosphere.atmosphere}
+</h3>
+
+      <p>
+        Based on {atmosphere.report_count} recent{" "}
+        {atmosphere.report_count === 1 ? "report" : "reports"}
+      </p>
+
+      <ul className="facility-list">
+        <li>Quiet: {atmosphere.breakdown.Quiet}</li>
+        <li>Moderate: {atmosphere.breakdown.Moderate}</li>
+        <li>Busy: {atmosphere.breakdown.Busy}</li>
+        <li>Very Busy: {atmosphere.breakdown["Very Busy"]}</li>
+      </ul>
+    </>
+  ) : (
+    <p>No recent atmosphere reports are available.</p>
+  )}
+</section>
+
+<hr />
+
+<h3>How busy is it right now?</h3>
+
+{isLoggedIn ? (
+  <form
+  className="atmosphere-form"
+  onSubmit={handleAtmosphereSubmit}
+>
+  <div className="atmosphere-options">
+    {[
+      "Quiet",
+      "Moderate",
+      "Busy",
+      "Very Busy",
+    ].map((level) => (
+      <button
+        key={level}
+        type="button"
+        className={
+          selectedAtmosphere === level
+            ? "atmosphere-option selected"
+            : "atmosphere-option"
+        }
+        onClick={() => setSelectedAtmosphere(level)}
+      >
+        {level}
+      </button>
+    ))}
+  </div>
+
+  {atmosphereError && (
+    <p className="form-error">{atmosphereError}</p>
+  )}
+
+  {atmosphereMessage && (
+    <p className="form-success">{atmosphereMessage}</p>
+  )}
+
+  <button
+    type="submit"
+    className="submit-review-button"
+    disabled={submittingAtmosphere}
+  >
+    {submittingAtmosphere
+      ? "Submitting..."
+      : "Submit Report"}
+  </button>
+</form>
+) : (
+  <p>
+    Please <Link to="/login">log in</Link> to submit an atmosphere report.
+  </p>
+)}
           <section className="details-section">
             <h2>Drinks</h2>
 

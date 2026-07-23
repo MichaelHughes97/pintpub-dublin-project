@@ -14,6 +14,7 @@ function Home() {
 
   const [pubs, setPubs] = useState([]);
   const [ratings, setRatings] = useState({});
+  const [atmospheres, setAtmospheres] = useState({});
   const [favouritePubIds, setFavouritePubIds] = useState([]);
   const [updatingFavouriteId, setUpdatingFavouriteId] = useState(null);
 
@@ -30,32 +31,68 @@ function Home() {
     5: stagsHead,
   };
 
+  // Load the current atmosphere for every pub
+  const loadAtmospheres = async (pubData) => {
+    const atmosphereEntries = await Promise.all(
+      pubData.map(async (pub) => {
+        try {
+          const response = await fetch(
+            `http://localhost:3000/api/atmosphere/${pub.pub_id}`,
+          );
+
+          if (!response.ok) {
+            throw new Error(
+              `Unable to retrieve atmosphere for ${pub.name}`,
+            );
+          }
+
+          const atmosphereData = await response.json();
+
+          return [pub.pub_id, atmosphereData];
+        } catch (error) {
+          console.error(error);
+
+          return [
+            pub.pub_id,
+            {
+              atmosphere: null,
+              report_count: 0,
+            },
+          ];
+        }
+      }),
+    );
+
+    setAtmospheres(Object.fromEntries(atmosphereEntries));
+  };
+
   useEffect(() => {
-    fetch("http://localhost:3000/api/pubs")
-      .then((response) => {
+    const loadPubs = async () => {
+      try {
+        const response = await fetch("http://localhost:3000/api/pubs");
+
         if (!response.ok) {
           throw new Error("Unable to retrieve pubs");
         }
 
-        return response.json();
-      })
-      .then(async (pubData) => {
+        const pubData = await response.json();
+
         setPubs(pubData);
 
         const ratingEntries = await Promise.all(
           pubData.map(async (pub) => {
             try {
-              const response = await fetch(
-                `http://localhost:3000/api/pubs/${pub.pub_id}/reviews`
+              const reviewsResponse = await fetch(
+                `http://localhost:3000/api/pubs/${pub.pub_id}/reviews`,
               );
 
-              if (!response.ok) {
+              if (!reviewsResponse.ok) {
                 throw new Error(
-                  `Unable to retrieve reviews for ${pub.name}`
+                  `Unable to retrieve reviews for ${pub.name}`,
                 );
               }
 
-              const reviews = await response.json();
+              const reviews = await reviewsResponse.json();
 
               if (reviews.length === 0) {
                 return [pub.pub_id, null];
@@ -63,7 +100,7 @@ function Home() {
 
               const totalRating = reviews.reduce(
                 (total, review) => total + Number(review.rating),
-                0
+                0,
               );
 
               const averageRating = totalRating / reviews.length;
@@ -73,15 +110,35 @@ function Home() {
               console.error(error);
               return [pub.pub_id, null];
             }
-          })
+          }),
         );
 
         setRatings(Object.fromEntries(ratingEntries));
-      })
-      .catch((error) => {
+
+        // Load the atmosphere after the pubs are available
+        await loadAtmospheres(pubData);
+      } catch (error) {
         console.error("Unable to load pubs:", error);
-      });
+      }
+    };
+
+    loadPubs();
   }, []);
+
+  // Refresh atmosphere information every 60 seconds
+  useEffect(() => {
+    if (pubs.length === 0) {
+      return undefined;
+    }
+
+    const atmosphereRefresh = setInterval(() => {
+      loadAtmospheres(pubs);
+    }, 60000);
+
+    return () => {
+      clearInterval(atmosphereRefresh);
+    };
+  }, [pubs]);
 
   // Load the logged-in user's favourite pubs
   useEffect(() => {
@@ -98,7 +155,7 @@ function Home() {
             headers: {
               Authorization: `Bearer ${token}`,
             },
-          }
+          },
         );
 
         if (!response.ok) {
@@ -108,7 +165,7 @@ function Home() {
         const favourites = await response.json();
 
         setFavouritePubIds(
-          favourites.map((favourite) => Number(favourite.pub_id))
+          favourites.map((favourite) => Number(favourite.pub_id)),
         );
       } catch (error) {
         console.error("Unable to load favourites:", error);
@@ -145,22 +202,22 @@ function Home() {
             : JSON.stringify({
                 pub_id: numericPubId,
               }),
-        }
+        },
       );
 
       const data = await response.json();
 
       if (!response.ok) {
         throw new Error(
-          data.message || "Unable to update this favourite."
+          data.message || "Unable to update this favourite.",
         );
       }
 
       if (isFavourite) {
         setFavouritePubIds((currentFavourites) =>
           currentFavourites.filter(
-            (favouriteId) => favouriteId !== numericPubId
-          )
+            (favouriteId) => favouriteId !== numericPubId,
+          ),
         );
       } else {
         setFavouritePubIds((currentFavourites) => [
@@ -221,8 +278,8 @@ function Home() {
         <h1>PintPoint Dublin</h1>
 
         <p className="hero-text">
-          Discover Dublin&apos;s best pubs, compare facilities, read
-          reviews and plan your perfect night out.
+          Discover Dublin&apos;s best pubs, compare facilities, read reviews
+          and plan your perfect night out.
         </p>
 
         <input
@@ -253,9 +310,7 @@ function Home() {
 
           <button
             type="button"
-            className={
-              activeFilter === "food" ? "active-filter" : ""
-            }
+            className={activeFilter === "food" ? "active-filter" : ""}
             onClick={() => setActiveFilter("food")}
           >
             Food Available
@@ -285,9 +340,7 @@ function Home() {
 
       <section className="pub-grid">
         {filteredPubs.map((pub) => {
-          const isFavourite = favouritePubIds.includes(
-            Number(pub.pub_id)
-          );
+          const isFavourite = favouritePubIds.includes(Number(pub.pub_id));
 
           return (
             <PubCard
@@ -295,10 +348,9 @@ function Home() {
               pub={pub}
               image={pubImages[pub.pub_id]}
               rating={ratings[pub.pub_id]}
+              atmosphere={atmospheres[pub.pub_id]}
               isFavourite={isFavourite}
-              isUpdating={
-                updatingFavouriteId === Number(pub.pub_id)
-              }
+              isUpdating={updatingFavouriteId === Number(pub.pub_id)}
               onFavouriteClick={handleFavouriteClick}
             />
           );

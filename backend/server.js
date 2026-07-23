@@ -9,6 +9,7 @@ const pubRoutes = require("./routes/pubRoutes");
 const authRoutes = require("./routes/authRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
 const favouriteRoutes = require("./routes/favouriteRoutes");
+const atmosphereRoutes = require("./routes/atmosphereRoutes");
 
 const app = express();
 const PORT = 3000;
@@ -24,6 +25,7 @@ app.use("/api/pubs", pubRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/favourites", favouriteRoutes);
+app.use("/api/atmosphere", atmosphereRoutes);
 
 // Test route to check that the backend is running
 app.get("/", (req, res) => {

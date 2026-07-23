@@ -5,11 +5,18 @@ function PubCard({
   pub,
   image,
   rating,
+  atmosphere,
   isFavourite = false,
   onFavouriteClick,
   isUpdating = false,
   showFavouriteButton = true,
 }) {
+  const currentAtmosphere = atmosphere?.atmosphere;
+
+  const atmosphereClass = currentAtmosphere
+    ? currentAtmosphere.toLowerCase().replace(" ", "-")
+    : "no-reports";
+
   return (
     <article className="pub-card">
       <div className="pub-image-placeholder">
@@ -60,16 +67,19 @@ function PubCard({
           </p>
         )}
 
+        <p className={`pub-atmosphere ${atmosphereClass}`}>
+          {currentAtmosphere
+            ? `${currentAtmosphere} now`
+            : "No recent atmosphere reports"}
+        </p>
+
         {pub.address && <p>{pub.address}</p>}
 
         {pub.description && (
           <p className="pub-description">{pub.description}</p>
         )}
 
-        <Link
-          className="details-button"
-          to={`/pubs/${pub.pub_id}`}
-        >
+        <Link className="details-button" to={`/pubs/${pub.pub_id}`}>
           View Details
         </Link>
       </div>

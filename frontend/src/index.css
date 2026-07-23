@@ -835,3 +835,84 @@ backdrop-filter: blur(6px);  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
   margin: 40px 0;
   color: #666;
 }
+
+/* ===== Atmosphere ===== */
+
+.current-atmosphere {
+  margin: 10px 0;
+  font-size: 2rem;
+  color: #8a5a35;
+}
+
+.atmosphere-form {
+  margin-top: 25px;
+  text-align: center;
+}
+
+.atmosphere-options {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.atmosphere-option {
+  padding: 12px 22px;
+  border: 2px solid #d7c8ba;
+  border-radius: 999px;
+  background: white;
+  color: #3b2418;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.atmosphere-option:hover {
+  transform: translateY(-2px);
+  border-color: #8a5a35;
+}
+
+.atmosphere-option.selected {
+  background: #3b2418;
+  color: white;
+  border-color: #3b2418;
+}
+
+/* Homepage atmosphere badge */
+
+.pub-atmosphere {
+  display: inline-block;
+  min-height: auto !important;
+  margin-top: 2px;
+  margin-bottom: 8px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.pub-atmosphere.quiet {
+  background-color: #e9f6ec;
+  color: #2f6b3a;
+}
+
+.pub-atmosphere.moderate {
+  background-color: #fff5d6;
+  color: #806316;
+}
+
+.pub-atmosphere.busy {
+  background-color: #ffead5;
+  color: #99531f;
+}
+
+.pub-atmosphere.very-busy {
+  background-color: #fde5e5;
+  color: #9b2c2c;
+}
+
+.pub-atmosphere.no-reports {
+  background-color: #eeeae6;
+  color: #6e625b;
+}
